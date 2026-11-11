@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+{% block title %}Settings — Sharer{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Settings</h1>
+  <form method="post">
+    <label>Public base URL
+      <input name="base_url" value="{{ config.base_url }}" required>
+      <small>Changing this only affects torrents created from now on.</small>
+    </label>
+    <label>Shared files directory
+      <input name="files_root" value="{{ config.files_root }}" required>
+    </label>
+    <label class="check"><input type="checkbox" name="trust_proxy"
+      {% if config.trust_proxy %}checked{% endif %}>
+      Behind a reverse proxy (trust <code>X-Forwarded-For</code>)</label>
+    <button type="submit">Save</button>
+  </form>
+  <h2>Tracker</h2>
+  <p class="muted">Announce URL (embedded in every torrent — contains the secret,
+  so only share <code>.torrent</code> files with people you trust):</p>
+  <code class="block">{{ config.base_url }}/announce/{{ config.announce_secret }}</code>
+</div>
+{% endblock %}

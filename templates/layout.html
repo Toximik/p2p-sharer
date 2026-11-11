@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>{% block title %}Sharer{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+{% block head %}{% endblock %}
+</head>
+<body>
+<header>
+  <span class="brand">⛵ Sharer</span>
+  {% if session.uid %}
+  <nav>
+    <a href="{{ url_for('index') }}">Torrents</a>
+    {% if session.is_admin %}
+    <a href="{{ url_for('add') }}">Add file</a>
+    <a href="{{ url_for('users') }}">Users</a>
+    <a href="{{ url_for('settings') }}">Settings</a>
+    {% endif %}
+  </nav>
+  <form class="logout" method="post" action="{{ url_for('logout') }}">
+    <span class="who">{{ session.username }}</span>
+    <button type="submit" class="link">Log out</button>
+  </form>
+  {% endif %}
+</header>
+<main>
+  {% with messages = get_flashed_messages() %}
+    {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

@@ -1,0 +1,17 @@
+services:
+  sharer:
+    build: .
+    image: sharer:latest
+    container_name: sharer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # Pre-fills the first-run setup page; the value saved there is what counts.
+      SHARER_BASE_URL: ${SHARER_BASE_URL:-}
+    volumes:
+      - sharer-data:/data                       # database, config, secrets
+      - ${SHARER_FILES:-./files}:/srv/files:ro   # the files you want to share
+
+volumes:
+  sharer-data:

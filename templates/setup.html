@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+{% block title %}First-run setup — Sharer{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Welcome to Sharer</h1>
+  <p>One-time setup: where this server is reachable, and your admin account.</p>
+  <form method="post">
+    <label>Public base URL
+      <input name="base_url" value="{{ guess }}" required>
+      <small>Goes into every torrent's announce and webseed URL — use the address
+      your friends will reach this server at (e.g. <code>http://your.static.ip:8080</code>
+      or <code>https://share.example.com</code>).</small>
+    </label>
+    <label>Shared files directory
+      <input name="files_root" value="{{ files_guess }}" placeholder="/srv/media" required>
+      <small>Directory on this server containing the files you want to share.
+      The Add page lets you browse it and turn files into torrents.</small>
+    </label>
+    <label>Admin username <input name="username" required></label>
+    <label>Admin password <input name="password" type="password" minlength="8" required>
+      <small>At least 8 characters.</small></label>
+    <button type="submit">Create</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% block title %}Torrents — Sharer{% endblock %}
+{% block head %}{% if hashing %}<meta http-equiv="refresh" content="3">{% endif %}{% endblock %}
+{% block content %}
+<h1>Torrents</h1>
+{% if not torrents %}
+<p class="muted">Nothing here yet{% if session.is_admin %} — <a href="{{ url_for('add') }}">add a file</a> to create the first torrent{% endif %}.</p>
+{% else %}
+<div class="tablewrap">
+<table>
+  <tr><th>Name</th><th>Size</th><th>Seeds</th><th>Peers</th><th>Done</th><th>Added</th><th></th></tr>
+  {% for t in torrents %}
+  <tr>
+    <td class="name">{{ t.name }}{% if t.file_count > 1 %} <span class="muted">📁 {{ t.file_count }} files</span>{% endif %}</td>
+    <td>{{ t.size | human_size }}</td>
+    <td>{{ t.seeders }} <span class="muted">+web</span></td>
+    <td>{{ t.leechers }}</td>
+    <td>{{ t.completed_count }}</td>
+    <td class="muted">{{ t.created_at | date }}</td>
+    <td class="actions">
+      {% if t.status == 'ready' %}
+        <a class="btn" href="{{ url_for('download_torrent', tid=t.id) }}">⬇ .torrent</a>
+      {% elif t.status == 'hashing' %}
+        <span class="badge">hashing…</span>
+      {% else %}
+        <span class="badge error" title="{{ t.error }}">error</span>
+      {% endif %}
+      {% if session.is_admin %}
+      <form method="post" action="{{ url_for('delete_torrent', tid=t.id) }}"
+            onsubmit="return confirm('Stop sharing “{{ t.name }}”? The file stays on the server.')">
+        <button type="submit" class="link danger">✕</button>
+      </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+</div>
+<p class="muted"><strong>Seeds +web</strong>: the server itself always seeds over HTTP (webseed),
+so downloads work even at 0 client seeds.</p>
+{% endif %}
+{% endblock %}

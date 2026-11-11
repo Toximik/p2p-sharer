@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+{% block title %}Add file — Sharer{% endblock %}
+{% block content %}
+<h1>Add a file</h1>
+<p class="muted">Browsing <code>{{ root }}{% if rel %}/{{ rel }}{% endif %}</code></p>
+<div class="tablewrap">
+<table>
+  <tr><th>Name</th><th>Size</th><th></th></tr>
+  {% if parent is not none %}
+  <tr><td class="name"><a href="{{ url_for('add', d=parent) }}">⬆ ..</a></td><td></td><td></td></tr>
+  {% endif %}
+  {% for d in dirs %}
+  <tr>
+    <td class="name"><a href="{{ url_for('add', d=d.rel) }}">📁 {{ d.name }}</a></td>
+    <td></td>
+    <td class="actions">
+      {% if d.registered %}
+      <span class="badge">shared</span>
+      {% else %}
+      <form method="post" action="{{ url_for('add_file') }}">
+        <input type="hidden" name="path" value="{{ d.rel }}">
+        <button type="submit">Share folder</button>
+      </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  {% for f in files %}
+  <tr>
+    <td class="name">{{ f.name }}</td>
+    <td>{{ f.size | human_size }}</td>
+    <td class="actions">
+      {% if f.registered %}
+      <span class="badge">shared</span>
+      {% else %}
+      <form method="post" action="{{ url_for('add_file') }}">
+        <input type="hidden" name="path" value="{{ f.rel }}">
+        <button type="submit">Create torrent</button>
+      </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  {% if not dirs and not files and parent is none %}
+  <tr><td colspan="3" class="muted">The shared directory is empty.</td></tr>
+  {% endif %}
+</table>
+</div>
+{% endblock %}
