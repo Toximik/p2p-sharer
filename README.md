@@ -86,7 +86,7 @@ that user; to use a different one, build with
 `docker compose build --build-arg UID=$(id -u) --build-arg GID=$(id -g)`.
 If you swap the named volume for a bind mount, `chown` it to that UID.
 
-Behind nginx, publish only on localhost (`"127.0.0.1:8080:8080"`), follow the
+Behind nginx, publish only on localhost (`SHARER_BIND=127.0.0.1:8080` in `.env`), follow the
 nginx/HTTPS steps below, and tick **“Behind a reverse proxy”** in Settings.
 For fail2ban, run the container with the `journald` logging driver and match
 on `CONTAINER_NAME=sharer` instead of the systemd unit.

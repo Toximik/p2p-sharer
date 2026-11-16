@@ -5,7 +5,8 @@ services:
     container_name: sharer
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      # Host side of the port; behind nginx use e.g. 127.0.0.1:8002 so it is not public.
+      - "${SHARER_BIND:-8080}:8080"
     environment:
       # Pre-fills the first-run setup page; the value saved there is what counts.
       SHARER_BASE_URL: ${SHARER_BASE_URL:-}
