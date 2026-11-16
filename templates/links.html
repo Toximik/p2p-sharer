@@ -14,7 +14,7 @@
       {% if l.missing %}<span class="badge error">missing</span>{% endif %}
       <br><span class="muted">by {{ l.username or "deleted user" }}, {{ l.created_at | date }}</span></td>
     <td class="link"><input class="linkurl" readonly value="{{ l.url }}" onfocus="this.select()">
-      <button type="button" class="link" onclick="copyLink(this)">Copy</button></td>
+      <button type="button" class="link copybtn">Copy</button></td>
     <td class="muted">{{ l.expires_at | date }}<br>{{ (l.expires_at - now) | remaining }}</td>
     <td>{{ l.download_count }}{% if l.max_downloads %} / {{ l.max_downloads }}{% endif %}</td>
     <td class="actions">
@@ -29,14 +29,6 @@
 </div>
 <p class="muted">Links need no login — anyone who has one can download until it expires.
 Expired links are removed automatically.</p>
-<script>
-function copyLink(btn) {
-  const input = btn.previousElementSibling;
-  input.select();
-  const done = () => { btn.textContent = "Copied"; setTimeout(() => btn.textContent = "Copy", 1500); };
-  if (navigator.clipboard) navigator.clipboard.writeText(input.value).then(done, () => document.execCommand("copy") && done());
-  else if (document.execCommand("copy")) done();
-}
-</script>
+<script src="{{ url_for('static', filename='copy.js') }}"></script>
 {% endif %}
 {% endblock %}

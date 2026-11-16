@@ -67,3 +67,22 @@ code.block {
 .btn.secondary { background: #2a3340; color: var(--text); font-weight: normal; padding: .3rem .7rem; margin-left: .5rem; }
 td.link { white-space: nowrap; }
 input.linkurl { width: 16rem; margin: 0; padding: .3rem .5rem; font-size: .85rem; }
+/* public download pages */
+.hero {
+  max-width: 34rem; margin: 2rem auto; text-align: center;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 2rem 1.5rem;
+}
+.hero-icon { font-size: 3.5rem; line-height: 1; }
+.hero-icon.small { font-size: 2.5rem; }
+.hero-name { word-break: break-word; margin: .8rem 0 .4rem; }
+.hero-meta { color: var(--text); margin: 0 0 1.4rem; }
+.btn.big { font-size: 1.15rem; padding: .85rem 2rem; border-radius: 10px; }
+.btn-sub { font-weight: normal; opacity: .75; margin-left: .3rem; }
+.cli { margin-top: 1.8rem; text-align: left; font-size: .9rem; }
+.cli label { color: var(--muted); margin: .7rem 0; }
+.copyrow { display: flex; gap: .5rem; align-items: center; margin-top: .25rem; }
+.copyrow input { margin: 0; padding: .35rem .5rem; font: .85rem ui-monospace, Consolas, monospace; }
+.copyrow button { margin: 0; padding: .35rem .8rem; white-space: nowrap; }
+.folderhead { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; }
+.folderhead h1 { margin: 0; word-break: break-word; }
+.folderhead p { margin: .2rem 0 0; }

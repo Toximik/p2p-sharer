@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+{% block title %}Link not available{% endblock %}
+{% block content %}
+<div class="hero">
+  <div class="hero-icon">⌛</div>
+  {% if reason == "limit" %}
+  <h1>Download limit reached</h1>
+  <p class="muted">This link has already been used as many times as allowed.</p>
+  {% elif reason == "missing" %}
+  <h1>File no longer available</h1>
+  <p class="muted">The shared file has been moved or removed.</p>
+  {% else %}
+  <h1>Link expired or not found</h1>
+  <p class="muted">This download link has expired, was revoked, or never existed.</p>
+  {% endif %}
+  <p class="muted">Ask the person who sent it for a new one.</p>
+</div>
+{% endblock %}

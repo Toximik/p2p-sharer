@@ -644,6 +644,28 @@ def webseed(secret, tid, reqpath):
 
 # ---------------------------------------------------------------- public temporary links
 
+_ICONS = {
+    "🎬": {"mkv", "mp4", "avi", "mov", "webm", "m4v", "wmv", "ts"},
+    "🎵": {"mp3", "flac", "wav", "ogg", "m4a", "aac", "opus"},
+    "🖼️": {"jpg", "jpeg", "png", "gif", "webp", "heic", "bmp", "svg", "tif", "tiff"},
+    "📦": {"zip", "7z", "rar", "tar", "gz", "bz2", "xz", "zst", "iso", "img"},
+    "📄": {"pdf", "doc", "docx", "odt", "txt", "md", "rtf", "epub"},
+    "📊": {"xls", "xlsx", "ods", "csv"},
+}
+
+
+def _file_icon(name: str) -> str:
+    ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+    for icon, exts in _ICONS.items():
+        if ext in exts:
+            return icon
+    return "📄"
+
+
+def _link_gone(reason: str):
+    status = 410 if reason == "limit" else 404
+    return render_template("public_gone.html", reason=reason), status
+
 def _serve_link_file(link, path: str):
     """Send one file of a link. Only downloads that start at byte 0 count toward
     max_downloads; resumes (Range from a later offset) are let through for a grace
@@ -655,7 +677,7 @@ def _serve_link_file(link, path: str):
     limit = link["max_downloads"]
     if limit is not None and link["download_count"] >= limit:
         if fresh or not link["last_download_at"] or now - link["last_download_at"] > LINK_RESUME_GRACE:
-            abort(410)
+            return _link_gone("limit")
     if fresh:
         with db() as conn:
             conn.execute("UPDATE links SET download_count = download_count + 1, last_download_at = ? WHERE id = ?",
@@ -667,13 +689,29 @@ def _serve_link_file(link, path: str):
 @app.route("/d/<token>/", defaults={"sub": ""})
 @app.route("/d/<token>/<path:sub>")
 def public_link(token, sub):
+    now = int(time.time())
     link = db().execute("SELECT * FROM links WHERE token=? AND expires_at > ?",
-                        (token, int(time.time()))).fetchone()
+                        (token, now)).fetchone()
     if link is None:
-        abort(404)
+        return _link_gone("expired")
     root = link["path"]
+    if not os.path.exists(root):
+        return _link_gone("missing")
     if not link["is_dir"]:
-        if sub not in ("", link["name"]) or not os.path.isfile(root):
+        if not os.path.isfile(root):
+            return _link_gone("missing")
+        if sub == "":
+            # landing page; only the actual file request counts as a download
+            limit = link["max_downloads"]
+            left = None if limit is None else max(limit - link["download_count"], 0)
+            if left == 0:
+                return _link_gone("limit")
+            direct = CONFIG["base_url"] + url_for("public_link", token=token, sub="download")
+            return render_template("public_file.html", link=link, size=os.path.getsize(root),
+                                   left=left, remaining=link["expires_at"] - now,
+                                   icon=_file_icon(link["name"]), direct=direct)
+        # "download" is the current direct URL; the bare filename is the pre-landing-page form
+        if sub not in ("download", link["name"]):
             abort(404)
         return _serve_link_file(link, root)
 
@@ -715,8 +753,12 @@ def public_link(token, sub):
     parent = None
     if parts:
         parent = "/".join(parts[:-1]) + ("/" if len(parts) > 1 else "")
+    for f in files:
+        f["icon"] = _file_icon(f["name"])
     return render_template("public_link.html", link=link, token=token, rel=rel,
-                           parent=parent, dirs=dirs, files=files)
+                           parent=parent, dirs=dirs, files=files,
+                           total=sum(f["size"] for f in files),
+                           remaining=link["expires_at"] - now)
 
 
 # ---------------------------------------------------------------- entrypoint

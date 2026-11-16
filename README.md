@@ -51,7 +51,10 @@ inside (recursively), skipping hidden files and symlinks.
 For people without a torrent client, **🔗 Link** on the Add page creates a
 plain HTTP/S link that needs no login and expires after 1 hour to 30 days.
 
-- **File links** (`/d/<token>/`, the filename is not in the URL) can also have a max download count.
+- **File links** (`/d/<token>/`) open a download page with the file name, size,
+  expiry and a big Download button, plus the direct link and a ready-made `wget`
+  command for the command line. Only the actual download counts, not page
+  views, so chat-app link previews don't use up downloads. File links can also have a max download count.
   Only downloads that start from byte 0 count. Resumes are still allowed for an
   hour after the last counted download, so a download that hits the limit
   can finish.
