@@ -16,13 +16,28 @@
       <span class="copyrow"><input id="direct" readonly value="{{ direct }}" onfocus="this.select()">
       <button type="button" class="copybtn">Copy</button></span>
     </label>
-    <label>Command line
-      <span class="copyrow"><input id="wget" readonly value="wget -c --content-disposition '{{ direct }}'" onfocus="this.select()">
-      <button type="button" class="copybtn">Copy</button></span>
-      <small><code>-c</code> resumes an interrupted download.
-      {% if left is not none %}Each new (not resumed) download counts toward the limit.{% endif %}</small>
-    </label>
+    <div class="clilabel">Command line
+      <span class="tabs" role="tablist">
+        {% for key, label, cmd in commands %}
+        <button type="button" class="tab" role="tab" data-cmd="{{ cmd }}" data-os="{{ key }}">{{ label }}</button>
+        {% endfor %}
+      </span>
+    </div>
+    <span class="copyrow"><input id="cmd" readonly value="{{ commands[0][2] }}" onfocus="this.select()">
+    <button type="button" class="copybtn">Copy</button></span>
+    <small class="muted">Run it again to resume an interrupted download.
+    {% if left is not none %}Each new (not resumed) download counts toward the limit.{% endif %}</small>
   </div>
 </div>
 <script src="{{ url_for('static', filename='copy.js') }}"></script>
+<script>
+(() => {
+  const tabs = document.querySelectorAll(".tab"), out = document.getElementById("cmd");
+  const pick = (t) => { tabs.forEach((x) => x.setAttribute("aria-selected", x === t)); out.value = t.dataset.cmd; };
+  tabs.forEach((t) => t.addEventListener("click", () => pick(t)));
+  const ua = navigator.userAgent;
+  const os = /Windows/.test(ua) ? "windows" : /Mac|Linux|X11|CrOS/.test(ua) ? "unix" : "windows";
+  pick([...tabs].find((t) => t.dataset.os === os) || tabs[0]);
+})();
+</script>
 {% endblock %}

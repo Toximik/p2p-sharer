@@ -86,3 +86,12 @@ input.linkurl { width: 16rem; margin: 0; padding: .3rem .5rem; font-size: .85rem
 .folderhead { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; }
 .folderhead h1 { margin: 0; word-break: break-word; }
 .folderhead p { margin: .2rem 0 0; }
+.clilabel { color: var(--muted); margin: 1rem 0 .3rem; display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.tab {
+  margin: 0; padding: .2rem .65rem; border-radius: 0; font-weight: normal; font-size: .8rem;
+  background: transparent; color: var(--muted);
+}
+.tab + .tab { border-left: 1px solid var(--line); }
+.tab[aria-selected="true"] { background: #2a3340; color: var(--text); }
+.cli small { display: block; margin-top: .35rem; }

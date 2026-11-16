@@ -92,7 +92,7 @@ def needs_setup() -> bool:
 
 @app.before_request
 def force_setup():
-    exempt = {"setup", "static"}
+    exempt = {"setup", "static", "favicon"}
     if request.endpoint in exempt or (request.endpoint or "").startswith(("announce", "scrape", "webseed", "public_link")):
         return
     if needs_setup():
@@ -119,6 +119,13 @@ def fmt_remaining(seconds):
     if seconds >= 3600:
         return f"in {seconds // 3600} h {seconds % 3600 // 60} min"
     return f"in {max(seconds, 0) // 60} min"
+
+
+@app.route("/favicon.ico")
+def favicon():
+    # Browsers probe /favicon.ico regardless of the <link>; answer with the SVG.
+    return send_file(os.path.join(app.static_folder, "favicon.svg"), mimetype="image/svg+xml",
+                     max_age=86400)
 
 
 # ---------------------------------------------------------------- setup / auth
@@ -662,6 +669,18 @@ def _file_icon(name: str) -> str:
     return "📄"
 
 
+def _cli_commands(url: str, name: str):
+    """Resumable download commands. curl gets the filename explicitly because
+    -J (name from the server) can't be combined with -C - (resume)."""
+    sh = lambda v: "'" + v.replace("'", "'\\''") + "'"  # POSIX shell quoting: ' -> '\''
+    ps = lambda v: "'" + v.replace("'", "''") + "'"        # PowerShell quoting
+    return [
+        ("windows", "Windows", f"curl.exe -C - -o {ps(name)} {ps(url)}"),
+        ("unix", "Linux / macOS", f"curl -C - -o {sh(name)} {sh(url)}"),
+        ("wget", "wget", f"wget -c --content-disposition {sh(url)}"),
+    ]
+
+
 def _link_gone(reason: str):
     status = 410 if reason == "limit" else 404
     return render_template("public_gone.html", reason=reason), status
@@ -709,7 +728,8 @@ def public_link(token, sub):
             direct = CONFIG["base_url"] + url_for("public_link", token=token, sub="download")
             return render_template("public_file.html", link=link, size=os.path.getsize(root),
                                    left=left, remaining=link["expires_at"] - now,
-                                   icon=_file_icon(link["name"]), direct=direct)
+                                   icon=_file_icon(link["name"]), direct=direct,
+                                   commands=_cli_commands(direct, link["name"]))
         # "download" is the current direct URL; the bare filename is the pre-landing-page form
         if sub not in ("download", link["name"]):
             abort(404)
