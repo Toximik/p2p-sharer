@@ -16,6 +16,7 @@
     <a href="{{ url_for('index') }}">Torrents</a>
     {% if session.is_admin %}
     <a href="{{ url_for('add') }}">Add file</a>
+    <a href="{{ url_for('links') }}">Links</a>
     <a href="{{ url_for('users') }}">Users</a>
     <a href="{{ url_for('settings') }}">Settings</a>
     {% endif %}

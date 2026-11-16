@@ -10,6 +10,7 @@ a secret path segment.
 import functools
 import os
 import re
+import secrets
 import socket
 import threading
 import time
@@ -92,7 +93,7 @@ def needs_setup() -> bool:
 @app.before_request
 def force_setup():
     exempt = {"setup", "static"}
-    if request.endpoint in exempt or (request.endpoint or "").startswith(("announce", "scrape", "webseed")):
+    if request.endpoint in exempt or (request.endpoint or "").startswith(("announce", "scrape", "webseed", "public_link")):
         return
     if needs_setup():
         return redirect(url_for("setup"))
@@ -109,6 +110,15 @@ def human_size(n):
 @app.template_filter("date")
 def fmt_date(ts):
     return time.strftime("%Y-%m-%d %H:%M", time.localtime(ts))
+
+
+@app.template_filter("remaining")
+def fmt_remaining(seconds):
+    if seconds >= 86400:
+        return f"in {seconds // 86400} d {seconds % 86400 // 3600} h"
+    if seconds >= 3600:
+        return f"in {seconds // 3600} h {seconds % 3600 // 60} min"
+    return f"in {max(seconds, 0) // 60} min"
 
 
 # ---------------------------------------------------------------- setup / auth
@@ -351,6 +361,87 @@ def delete_torrent(tid):
     return redirect(url_for("index"))
 
 
+# ---------------------------------------------------------------- temporary links
+
+LINK_EXPIRY_CHOICES = [  # (hours, label)
+    (1, "1 hour"), (6, "6 hours"), (24, "1 day"), (72, "3 days"),
+    (168, "7 days"), (720, "30 days"),
+]
+LINK_RESUME_GRACE = 3600  # resumes allowed this long after the last counted download
+
+
+def _link_url(token: str, name: str, is_dir: bool) -> str:
+    path = url_for("public_link", token=token, sub="" if is_dir else name)
+    return CONFIG["base_url"] + path
+
+
+def _purge_expired_links(conn):
+    with conn:
+        conn.execute("DELETE FROM links WHERE expires_at <= ?", (int(time.time()),))
+
+
+@app.route("/links")
+@admin_required
+def links():
+    conn = db()
+    _purge_expired_links(conn)
+    rows = conn.execute(
+        "SELECT links.*, users.username FROM links LEFT JOIN users ON users.id = links.created_by "
+        "ORDER BY links.created_at DESC").fetchall()
+    items = [{**dict(r), "url": _link_url(r["token"], r["name"], r["is_dir"]),
+              "missing": not os.path.exists(r["path"])} for r in rows]
+    return render_template("links.html", links=items, now=int(time.time()))
+
+
+@app.route("/links/new", methods=["GET", "POST"])
+@admin_required
+def new_link():
+    rel = (request.values.get("path") or "").strip("/\\")
+    target = os.path.realpath(_resolve_shared(rel))
+    if not rel or not (os.path.isfile(target) or os.path.isdir(target)):
+        flash("No such file or folder in the shared directory.")
+        return redirect(url_for("add"))
+    is_dir = os.path.isdir(target)
+    name = os.path.basename(target)
+    if request.method == "POST":
+        try:
+            hours = int(request.form.get("hours", ""))
+        except ValueError:
+            hours = 0
+        max_dl = None
+        if not is_dir and request.form.get("max_downloads", "").strip():
+            try:
+                max_dl = int(request.form["max_downloads"])
+            except ValueError:
+                max_dl = 0
+        if hours not in {h for h, _ in LINK_EXPIRY_CHOICES}:
+            flash("Pick a valid expiry.")
+        elif max_dl is not None and max_dl < 1:
+            flash("Max downloads must be a positive number (or empty for unlimited).")
+        else:
+            now = int(time.time())
+            token = secrets.token_urlsafe(16)
+            with db() as conn:
+                conn.execute(
+                    "INSERT INTO links (token, name, path, is_dir, created_by, created_at, expires_at, max_downloads) "
+                    "VALUES (?,?,?,?,?,?,?,?)",
+                    (token, name, target, int(is_dir), session["uid"], now, now + hours * 3600, max_dl),
+                )
+            flash(f"Link created for “{name}”.")
+            return redirect(url_for("links"))
+    return render_template("link_new.html", rel=rel, name=name, is_dir=is_dir,
+                           choices=LINK_EXPIRY_CHOICES)
+
+
+@app.route("/links/<int:lid>/delete", methods=["POST"])
+@admin_required
+def delete_link(lid):
+    with db() as conn:
+        conn.execute("DELETE FROM links WHERE id=?", (lid,))
+    flash("Link revoked.")
+    return redirect(url_for("links"))
+
+
 @app.route("/users", methods=["GET", "POST"])
 @admin_required
 def users():
@@ -547,6 +638,83 @@ def webseed(secret, tid, reqpath):
         if os.path.isfile(target):
             return send_file(target, conditional=True, mimetype="application/octet-stream")
     abort(404)
+
+
+# ---------------------------------------------------------------- public temporary links
+
+def _serve_link_file(link, path: str):
+    """Send one file of a link. Only downloads that start at byte 0 count toward
+    max_downloads; resumes (Range from a later offset) are let through for a grace
+    period so a download that hit the limit can still finish."""
+    now = int(time.time())
+    rng = request.headers.get("Range", "").strip()
+    m = re.match(r"bytes=(\d*)-", rng)
+    fresh = request.method == "GET" and (not m or m.group(1) == "0")
+    limit = link["max_downloads"]
+    if limit is not None and link["download_count"] >= limit:
+        if fresh or not link["last_download_at"] or now - link["last_download_at"] > LINK_RESUME_GRACE:
+            abort(410)
+    if fresh:
+        with db() as conn:
+            conn.execute("UPDATE links SET download_count = download_count + 1, last_download_at = ? WHERE id = ?",
+                         (now, link["id"]))
+    return send_file(path, conditional=True, as_attachment=True,
+                     download_name=os.path.basename(path))
+
+
+@app.route("/d/<token>/", defaults={"sub": ""})
+@app.route("/d/<token>/<path:sub>")
+def public_link(token, sub):
+    link = db().execute("SELECT * FROM links WHERE token=? AND expires_at > ?",
+                        (token, int(time.time()))).fetchone()
+    if link is None:
+        abort(404)
+    root = link["path"]
+    if not link["is_dir"]:
+        if sub not in ("", link["name"]) or not os.path.isfile(root):
+            abort(404)
+        return _serve_link_file(link, root)
+
+    # folder link: live view of the folder; hidden entries and symlinks are off-limits
+    parts = [p for p in sub.split("/") if p]
+    if any(p.startswith(".") for p in parts):
+        abort(404)
+    target = os.path.join(root, *parts)
+    try:
+        if os.path.commonpath([root, os.path.realpath(target)]) != root:
+            abort(404)
+    except ValueError:
+        abort(404)
+    cur = root
+    for p in parts:
+        cur = os.path.join(cur, p)
+        if os.path.islink(cur):
+            abort(404)
+    if os.path.isfile(target):
+        return _serve_link_file(link, target)
+    if not os.path.isdir(target):
+        abort(404)
+    if sub and not sub.endswith("/"):
+        return redirect(url_for("public_link", token=token, sub=sub + "/"))
+
+    rel = "/".join(parts)
+    dirs, files = [], []
+    try:
+        for entry in sorted(os.scandir(target), key=lambda e: e.name.lower()):
+            if entry.name.startswith(".") or entry.is_symlink():
+                continue
+            entry_rel = f"{rel}/{entry.name}" if rel else entry.name
+            if entry.is_dir(follow_symlinks=False):
+                dirs.append({"name": entry.name, "sub": entry_rel + "/"})
+            elif entry.is_file(follow_symlinks=False):
+                files.append({"name": entry.name, "sub": entry_rel, "size": entry.stat().st_size})
+    except OSError:
+        abort(404)
+    parent = None
+    if parts:
+        parent = "/".join(parts[:-1]) + ("/" if len(parts) > 1 else "")
+    return render_template("public_link.html", link=link, token=token, rel=rel,
+                           parent=parent, dirs=dirs, files=files)
 
 
 # ---------------------------------------------------------------- entrypoint

@@ -46,6 +46,23 @@ To share something, open **Add file**, browse the shared directory, and hit
 hashed in place, never copied or moved. Folder torrents include all files
 inside (recursively), skipping hidden files and symlinks.
 
+### Temporary download links
+
+For people without a torrent client, **🔗 Link** on the Add page creates a
+plain HTTP/S link that needs no login and expires after 1 hour to 30 days.
+
+- **File links** (`/d/<token>/<name>`) can also have a max download count.
+  Only downloads that start from byte 0 count. Resumes are still allowed for an
+  hour after the last counted download, so a download that hits the limit
+  can finish.
+- **Folder links** (`/d/<token>/`) show a page that lists the folder live,
+  including subfolders, with a download link for each file. They expire by
+  time only. Hidden files and symlinks are never listed or served.
+
+Manage links under **Links**: copy, revoke, see download counts. Expired
+links stop working and are removed automatically. Anyone who has a link can
+use it until it expires, so pick short expiry times for anything sensitive.
+
 Environment variables: `SHARER_DATA` (data directory, default `./data`),
 `SHARER_HOST`, `SHARER_PORT`, and optionally `SHARER_BASE_URL` /
 `SHARER_FILES_ROOT` to pre-fill the setup page.

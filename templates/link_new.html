@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% block title %}New link — Sharer{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>New download link</h1>
+  <p>{% if is_dir %}📁{% else %}📄{% endif %} <strong>{{ name }}</strong><br>
+  <span class="muted">{{ rel }}</span></p>
+  <form method="post">
+    <input type="hidden" name="path" value="{{ rel }}">
+    <label>Expires after
+      <select name="hours">
+        {% for hours, label in choices %}
+        <option value="{{ hours }}" {% if hours == 24 %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    {% if is_dir %}
+    <p class="muted">Anyone with the link can browse this folder and download any file in it
+    until it expires. The listing is live — files added later show up too.</p>
+    {% else %}
+    <label>Max downloads
+      <input name="max_downloads" type="number" min="1" placeholder="unlimited">
+      <small>Only complete downloads from the start count; resumes don't.</small>
+    </label>
+    <p class="muted">Anyone with the link can download this file until it expires.</p>
+    {% endif %}
+    <button type="submit">Create link</button>
+  </form>
+</div>
+{% endblock %}

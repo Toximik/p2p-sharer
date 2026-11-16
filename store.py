@@ -29,6 +29,19 @@ CREATE TABLE IF NOT EXISTS torrents (
     file_count INTEGER NOT NULL DEFAULT 1,
     created_at INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS links (
+    id INTEGER PRIMARY KEY,
+    token TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    path TEXT NOT NULL,                      -- absolute, realpath'd at creation
+    is_dir INTEGER NOT NULL DEFAULT 0,
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL,
+    max_downloads INTEGER,                   -- NULL = unlimited (always NULL for folders)
+    download_count INTEGER NOT NULL DEFAULT 0,
+    last_download_at INTEGER
+);
 """
 
 

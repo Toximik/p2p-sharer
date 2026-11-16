@@ -64,3 +64,6 @@ code.block {
   background: var(--bg); border: 1px solid var(--line);
   word-break: break-all; font-size: .85rem;
 }
+.btn.secondary { background: #2a3340; color: var(--text); font-weight: normal; padding: .3rem .7rem; margin-left: .5rem; }
+td.link { white-space: nowrap; }
+input.linkurl { width: 16rem; margin: 0; padding: .3rem .5rem; font-size: .85rem; }

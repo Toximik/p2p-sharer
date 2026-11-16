@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+{% block title %}{{ link.name }}{% endblock %}
+{% block content %}
+<h1>📁 {{ link.name }}{% if rel %}<span class="muted"> / {{ rel }}</span>{% endif %}</h1>
+<p class="muted">Shared link — available until {{ link.expires_at | date }}.</p>
+<div class="tablewrap">
+<table>
+  <tr><th>Name</th><th>Size</th></tr>
+  {% if parent is not none %}
+  <tr><td class="name"><a href="{{ url_for('public_link', token=token, sub=parent) }}">⬆ ..</a></td><td></td></tr>
+  {% endif %}
+  {% for d in dirs %}
+  <tr><td class="name"><a href="{{ url_for('public_link', token=token, sub=d.sub) }}">📁 {{ d.name }}</a></td><td></td></tr>
+  {% endfor %}
+  {% for f in files %}
+  <tr><td class="name"><a href="{{ url_for('public_link', token=token, sub=f.sub) }}">{{ f.name }}</a></td>
+      <td>{{ f.size | human_size }}</td></tr>
+  {% endfor %}
+  {% if not dirs and not files %}
+  <tr><td colspan="2" class="muted">This folder is empty.</td></tr>
+  {% endif %}
+</table>
+</div>
+{% endblock %}

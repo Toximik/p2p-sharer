@@ -2,6 +2,7 @@
 {% block title %}Add file — Sharer{% endblock %}
 {% block content %}
 <h1>Add a file</h1>
+<p class="muted">Create a torrent, or a temporary 🔗 HTTP download link (no login needed).</p>
 <p class="muted">Browsing <code>{{ root }}{% if rel %}/{{ rel }}{% endif %}</code></p>
 <div class="tablewrap">
 <table>
@@ -22,6 +23,7 @@
         <button type="submit">Share folder</button>
       </form>
       {% endif %}
+      <a class="btn secondary" href="{{ url_for('new_link', path=d.rel) }}">🔗 Link</a>
     </td>
   </tr>
   {% endfor %}
@@ -38,6 +40,7 @@
         <button type="submit">Create torrent</button>
       </form>
       {% endif %}
+      <a class="btn secondary" href="{{ url_for('new_link', path=f.rel) }}">🔗 Link</a>
     </td>
   </tr>
   {% endfor %}

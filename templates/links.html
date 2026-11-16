@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% block title %}Links — Sharer{% endblock %}
+{% block content %}
+<h1>Download links</h1>
+{% if not links %}
+<p class="muted">No active links. Create one from <a href="{{ url_for('add') }}">Add file</a>.</p>
+{% else %}
+<div class="tablewrap">
+<table>
+  <tr><th>Name</th><th>Link</th><th>Expires</th><th>Downloads</th><th></th></tr>
+  {% for l in links %}
+  <tr>
+    <td class="name">{% if l.is_dir %}📁{% else %}📄{% endif %} {{ l.name }}
+      {% if l.missing %}<span class="badge error">missing</span>{% endif %}
+      <br><span class="muted">by {{ l.username or "deleted user" }}, {{ l.created_at | date }}</span></td>
+    <td class="link"><input class="linkurl" readonly value="{{ l.url }}" onfocus="this.select()">
+      <button type="button" class="link" onclick="copyLink(this)">Copy</button></td>
+    <td class="muted">{{ l.expires_at | date }}<br>{{ (l.expires_at - now) | remaining }}</td>
+    <td>{{ l.download_count }}{% if l.max_downloads %} / {{ l.max_downloads }}{% endif %}</td>
+    <td class="actions">
+      <form method="post" action="{{ url_for('delete_link', lid=l.id) }}"
+            onsubmit="return confirm('Revoke this link? It stops working immediately.')">
+        <button type="submit" class="link danger">✕</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+</div>
+<p class="muted">Links need no login — anyone who has one can download until it expires.
+Expired links are removed automatically.</p>
+<script>
+function copyLink(btn) {
+  const input = btn.previousElementSibling;
+  input.select();
+  const done = () => { btn.textContent = "Copied"; setTimeout(() => btn.textContent = "Copy", 1500); };
+  if (navigator.clipboard) navigator.clipboard.writeText(input.value).then(done, () => document.execCommand("copy") && done());
+  else if (document.execCommand("copy")) done();
+}
+</script>
+{% endif %}
+{% endblock %}
