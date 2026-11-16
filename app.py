@@ -370,9 +370,11 @@ LINK_EXPIRY_CHOICES = [  # (hours, label)
 LINK_RESUME_GRACE = 3600  # resumes allowed this long after the last counted download
 
 
-def _link_url(token: str, name: str, is_dir: bool) -> str:
-    path = url_for("public_link", token=token, sub="" if is_dir else name)
-    return CONFIG["base_url"] + path
+def _link_url(token: str) -> str:
+    # No filename in the URL: it would leak what's shared to anyone who sees the
+    # link (chat previews, proxy logs). The download still gets the real name via
+    # Content-Disposition. Old /d/<token>/<name> URLs keep working.
+    return CONFIG["base_url"] + url_for("public_link", token=token, sub="")
 
 
 def _purge_expired_links(conn):
@@ -388,7 +390,7 @@ def links():
     rows = conn.execute(
         "SELECT links.*, users.username FROM links LEFT JOIN users ON users.id = links.created_by "
         "ORDER BY links.created_at DESC").fetchall()
-    items = [{**dict(r), "url": _link_url(r["token"], r["name"], r["is_dir"]),
+    items = [{**dict(r), "url": _link_url(r["token"]),
               "missing": not os.path.exists(r["path"])} for r in rows]
     return render_template("links.html", links=items, now=int(time.time()))
 
