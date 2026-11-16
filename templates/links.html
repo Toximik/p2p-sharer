@@ -16,7 +16,13 @@
     <td class="link"><input class="linkurl" readonly value="{{ l.url }}" onfocus="this.select()">
       <button type="button" class="link copybtn">Copy</button></td>
     <td class="muted">{{ l.expires_at | date }}<br>{{ (l.expires_at - now) | remaining }}</td>
-    <td>{{ l.download_count }}{% if l.max_downloads %} / {{ l.max_downloads }}{% endif %}</td>
+    <td class="count">{{ l.download_count }}{% if l.max_downloads %} / {{ l.max_downloads }}{% endif %}
+      {% if l.download_count %}
+      <form method="post" action="{{ url_for('reset_link', lid=l.id) }}"
+            onsubmit="return confirm('Reset the download count of “{{ l.name }}” to 0?')">
+        <button type="submit" class="link" title="Reset download count">↺ reset</button>
+      </form>
+      {% endif %}</td>
     <td class="actions">
       <form method="post" action="{{ url_for('delete_link', lid=l.id) }}"
             onsubmit="return confirm('Revoke this link? It stops working immediately.')">

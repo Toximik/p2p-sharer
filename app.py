@@ -442,6 +442,15 @@ def new_link():
                            choices=LINK_EXPIRY_CHOICES)
 
 
+@app.route("/links/<int:lid>/reset", methods=["POST"])
+@admin_required
+def reset_link(lid):
+    with db() as conn:
+        conn.execute("UPDATE links SET download_count = 0, last_download_at = NULL WHERE id=?", (lid,))
+    flash("Download count reset.")
+    return redirect(url_for("links"))
+
+
 @app.route("/links/<int:lid>/delete", methods=["POST"])
 @admin_required
 def delete_link(lid):

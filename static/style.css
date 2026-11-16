@@ -95,3 +95,14 @@ input.linkurl { width: 16rem; margin: 0; padding: .3rem .5rem; font-size: .85rem
 .tab + .tab { border-left: 1px solid var(--line); }
 .tab[aria-selected="true"] { background: #2a3340; color: var(--text); }
 .cli small { display: block; margin-top: .35rem; }
+.btn.dl { margin: 0; padding: .5rem 1rem; white-space: nowrap; }
+.btn.secondary.dl { margin-left: 0; }
+td.count form { display: block; margin-top: .2rem; }
+td.count button.link { font-size: .85rem; }
+details.adduser { margin-top: 1.2rem; }
+details.adduser > summary { list-style: none; }
+details.adduser > summary::-webkit-details-marker { display: none; }
+details.adduser .card { margin-top: .4rem; }
+@media (max-width: 34rem) {
+  .btn.dl .btn-sub { display: block; margin: 0; }
+}

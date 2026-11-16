@@ -22,7 +22,9 @@
   {% endfor %}
 </table>
 </div>
-<div class="card narrow">
+<details class="adduser">
+  <summary class="btn">＋ Add user</summary>
+  <div class="card narrow">
   <h2>Add a friend</h2>
   <form method="post">
     <label>Username <input name="username" required></label>
@@ -30,5 +32,6 @@
     <label class="check"><input type="checkbox" name="is_admin"> Admin</label>
     <button type="submit">Add user</button>
   </form>
-</div>
+  </div>
+</details>
 {% endblock %}
